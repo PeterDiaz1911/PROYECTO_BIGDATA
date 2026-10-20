@@ -1,0 +1,11 @@
+{
+  "name": "serpost-logistica-academica",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "pnpm --filter @serpost/web dev",
+    "build": "pnpm --filter @serpost/web build",
+    "lint": "pnpm --filter @serpost/web lint"
+  }
+}

@@ -1,0 +1,23 @@
+:root {
+  color-scheme: light;
+  --bs-primary: #205ab1;
+  --bs-primary-rgb: 32, 90, 177;
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background: #f5f7fb;
+  color: #26364c;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+
+::selection { background: #d9e7ff; color: #163e7a; }
