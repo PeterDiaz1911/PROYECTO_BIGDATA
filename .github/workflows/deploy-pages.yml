@@ -36,11 +36,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate public build configuration
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL" || { echo "::error::Set the NEXT_PUBLIC_SUPABASE_URL Actions variable"; exit 1; }
+          test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" || { echo "::error::Set the NEXT_PUBLIC_SUPABASE_ANON_KEY Actions variable"; exit 1; }
+          test -n "$NEXT_PUBLIC_TURNSTILE_SITE_KEY" || { echo "::error::Set the NEXT_PUBLIC_TURNSTILE_SITE_KEY Actions variable"; exit 1; }
+
       - name: Lint
         run: pnpm --filter @serpost/web lint
 
+      - name: Typecheck
+        run: pnpm --filter @serpost/web typecheck
+
       - name: Build static site
         run: pnpm --filter @serpost/web build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+
+      - name: Verify static routes and basePath
+        run: |
+          test -f apps/web/out/index.html
+          test -f apps/web/out/tracking/index.html
+          grep -q '/PROYECTO_BIGDATA/_next/' apps/web/out/tracking/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

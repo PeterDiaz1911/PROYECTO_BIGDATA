@@ -1,0 +1,4 @@
+project_id = "proyecto-bigdata"
+
+[functions.public-tracking]
+verify_jwt = false

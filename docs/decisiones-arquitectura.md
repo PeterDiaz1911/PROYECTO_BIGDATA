@@ -1,39 +1,25 @@
 # Decisiones de arquitectura
 
-Estado: propuesta inicial de la etapa 1; pendiente de validar contra `docs/referencia.pdf`.
+## Alcance
 
-## Alcance y fuente
+Primera entrega funcional para una interfaz Next.js estática, autenticación y flujo transaccional básico de encomiendas. El modelo de dominio sigue pendiente de cotejo con `docs/referencia.pdf`, que no estaba disponible en el espacio de trabajo.
 
-El espacio de trabajo no contenía el PDF al iniciar este trabajo. Estas decisiones se basan exclusivamente en el requerimiento funcional compartido y no presentan como verificados los procesos ni el modelo de datos de SERPOST. Los datos de la aplicación serán ficticios y de demostración académica hasta que se autoricen fuentes reales.
+## Decisiones aplicadas
 
-## Decisiones
+1. **Exportación estática:** se preservan `output: "export"` y el `basePath` de GitHub Pages. No se agregan endpoints de Next.js ni se requiere servidor web propio.
+2. **Supabase Auth:** inicio y cierre de sesión, alta exclusiva de clientes, confirmación de correo y recuperación de contraseña usan el cliente oficial de Supabase.
+3. **Clave pública en el navegador:** la compilación solo recibe la URL y clave `anon`/`publishable`. Las credenciales de administración permanecen fuera del frontend.
+4. **RBAC en PostgreSQL:** `profiles.role_code`, `agency_id` e `is_active` no se pueden insertar o actualizar desde el navegador. El signup crea siempre un cliente activo; el personal se provisiona en un canal administrativo.
+5. **RLS para lecturas:** el cliente activo ve solo sus envíos/historial; el personal activo ve datos según agencia y rol; administrador/analista leen globalmente. Una cuenta inactiva no opera ni lee envíos.
+6. **Escrituras mediante RPC:** `create_shipment`, `assign_shipment` y `update_shipment_status` comprueban actor, rol, agencia, activación, asignación y transición. El evento histórico se genera por trigger en la misma transacción.
+7. **Tracking no enumerativo:** los códigos usan 128 bits aleatorios, `UNIQUE` e inmutabilidad. La consulta pública está tras Turnstile y una Edge Function. El RPC público solo es ejecutable por el runtime de servidor y retorna campos minimizados; nunca se concede `SELECT` anónimo a envíos/historial.
+8. **Historial auditado:** `actor_id` proviene de `auth.uid()` y `created_at` de PostgreSQL; el navegador no puede insertar, alterar ni eliminar eventos directamente.
+9. **Ajuste del dominio antes de producción:** estados, campos, retención, privacidad y roles deben revisarse contra documentación autorizada y políticas institucionales antes de cargar datos reales.
 
-1. **Monorepositorio con pnpm workspaces.** Mantener frontend, API, contratos compartidos y analítica en paquetes separados para facilitar desarrollo coordinado sin acoplar sus ciclos de despliegue.
-2. **Monolito modular para la API.** NestJS con módulos de dominio y límites explícitos; la API REST versionada es la autoridad para reglas logísticas y persistencia.
-3. **Aplicación web independiente.** Next.js App Router consume `/api/v1`; Bootstrap 5/React-Bootstrap define el sistema visual. La interfaz no replica reglas de negocio.
-4. **Persistencia operacional relacional.** MySQL 8 con Prisma ORM 7, migraciones versionadas y transacciones para operaciones críticas. Confirmar compatibilidad oficial entre Prisma 7 y MySQL antes de instalar o fijar versiones.
-5. **Sesión web protegida.** Preferir sesiones revocables mediante cookie HttpOnly, Secure en producción y SameSite apropiado; proteger mutaciones frente a CSRF. La API validará autorización en cada operación.
-6. **Historial de seguimiento inmutable.** Registrar cada evento como nuevo dato; las rectificaciones serán eventos vinculados, no actualizaciones ni eliminaciones del historial.
-7. **Data Warehouse separado.** Mantener `serpost_dw` independiente del esquema transaccional. Definir `Fact_Envios` con una fila por envío y ciclo de vida para evitar duplicar envíos al relacionar operaciones, incidencias o intentos.
-8. **ETL fuera de la ruta operativa.** Proceso Python ejecutable manualmente, idempotente y observable; no bloqueará transacciones de la API.
-9. **Analítica descriptiva antes de ML.** Los modelos predictivos se habilitarán solo cuando haya datos y evaluación temporal suficientes; no se mostrarán predicciones de muestra como resultados reales.
-10. **Entidades complementarias justificadas.** Evaluar `vehiculo`, `ruta` y `despacho_envio`: los vehículos permiten representar capacidad; las rutas, los trayectos planificados; la relación despacho-envío permite agrupar envíos sin limitar un despacho a un único envío. Son propuestas de diseño, no tablas atribuidas al esquema del documento.
-11. **Privacidad y separación público/interno.** El endpoint público de tracking expondrá únicamente estado, fechas, centros y eventos expresamente permitidos, nunca datos personales de remitente o destinatario.
-12. **Entorno local reproducible.** Docker Compose para MySQL y servicios que se incorporen después; secretos en variables de entorno y `.env.example` sin credenciales reales.
+## Pendiente
 
-## Modelo operacional y discrepancia pendiente
-
-El requerimiento recibido enumera 18 tablas para el capítulo II, pero indica que los diagramas del PDF muestran 15. Como el PDF no está disponible, no es posible comprobar la diferencia, los nombres originales, sus columnas ni sus relaciones. Por tanto:
-
-- La lista de 18 entidades es una referencia del requerimiento, no un esquema verificado.
-- No se debe ejecutar ni publicar una migración definitiva hasta revisar el PDF.
-- La propuesta ER de `diagrama-er.md` es conceptual y distingue las entidades enumeradas de las complementarias.
-- En la siguiente revisión se documentará la conciliación entre diagramas y secciones antes de cerrar el modelo físico.
-
-## Decisiones pendientes de evidencia
-
-- Disponibilidad, capítulos y modelo exacto de `docs/referencia.pdf`.
-- Cardinalidades, claves candidatas, estados y transiciones logísticas del documento.
-- Zona horaria y precisión de fechas requerida por las fuentes autorizadas.
-- Versiones compatibles y vigentes de Node.js LTS, NestJS, Next.js y Prisma 7 al instalar.
-- Política institucional para retención de datos, auditoría, privacidad y credenciales de demostración.
+- Aplicar la migración en un proyecto Supabase y ejecutar `supabase test db`; esas pruebas aún no se ejecutaron por falta de CLI/proyecto accesible.
+- Desplegar la Edge Function y configurar Turnstile antes de habilitar el portal público.
+- Validar el modelo y las transiciones con `docs/referencia.pdf`.
+- Completar administración de agencias/empleados, bandejas, incidencias, evidencias, despachos/vehículos/rutas, analítica, ETL y reportes.
+- Revisar políticas operativas, privacidad, retención, SMTP, observabilidad y recuperación de incidentes.

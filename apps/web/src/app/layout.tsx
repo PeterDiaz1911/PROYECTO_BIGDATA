@@ -3,9 +3,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.scss";
 
 export const metadata: Metadata = {
-  title: "SERPOST | Panel logístico académico",
+  title: "Logística | Gestión de envíos",
   description:
-    "Demostración académica de gestión logística y trazabilidad de envíos. No es un portal oficial de SERPOST.",
+    "Gestión autenticada de encomiendas y trazabilidad logística.",
 };
 
 export default function RootLayout({
